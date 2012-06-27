@@ -1,0 +1,29 @@
+#!/usr/bin/env -vS awk -f
+
+BEGIN {
+	FS="[ :-]";
+	sum=0;
+}
+
+/^[^#]/ {
+	from=$4*60+$5;
+	to=$6*60+$7;
+	t=to-from;
+	if(t < 0)
+		t+=24*60;
+	if(to > 0 && from > 0) {
+		m=t % 60;
+		h=(t-m)/60;
+ 		printf("%2dh %02dm\t-> %s\n", h, m, $0); 
+		sum+=t;
+	}
+	else {
+		print "??? " $0
+	}
+}
+
+END {
+	m=sum % 60;
+	h=(sum-m)/60
+	print "=== w sumie " h "h" m "m ===";
+}
