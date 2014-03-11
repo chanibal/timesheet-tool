@@ -1,29 +1,100 @@
-#!/usr/bin/env -vS awk -f
+#!/usr/bin/env node
 
-BEGIN {
-	FS="[ :-]";
-	sum=0;
+"use strict"
+
+console.log("Timesheet:" + process.argv[fi]);
+
+function formatTime(m) {
+	var h=~~(m/60);
+	m-=h*60;
+	return h+"h"+("00"+m).slice(-2)+"m";
 }
 
-/^[^#]/ {
-	from=$4*60+$5;
-	to=$6*60+$7;
-	t=to-from;
-	if(t < 0)
-		t+=24*60;
-	if(to > 0 && from > 0) {
-		m=t % 60;
-		h=(t-m)/60;
- 		printf("%2dh %02dm\t-> %s\n", h, m, $0); 
-		sum+=t;
-	}
-	else {
-		print "??? " $0
-	}
-}
 
-END {
-	m=sum % 60;
-	h=(sum-m)/60
-	print "=== w sumie " h "h" m "m ===";
-}
+var msum=0;
+var msumreal=0;
+var errors=false;
+
+for(var fi=2; fi < process.argv.length; fi++)
+require("fs").readFile(process.argv[fi], "utf-8", function(error, data) {
+	if(error)
+		throw error;
+		
+	var entryRegex=/^(\d{4})-(\d{2})-(\d{2})\s+(\d{1,2}):(\d{1,2})-(\d{1,2}):(\d{1,2})\s+(.+)$/;
+	var entryHoursRegex=/^(\d+)\s*h(\d+)m\s+(.+)$/;
+	var tagRegex=/\[([^\]]+)\]/g;
+		
+	
+	function processLog(entry) {
+	
+		var log = entry.log;
+		var minutes = entry.t;
+	
+		var msumadd=minutes;
+		msumreal+=msumadd;			
+
+	
+		var tag;
+		while((tag=tagRegex.exec(log))) {
+			tag=tag[1];
+			var multi=/^x\s*(\d+)$/.exec(tag);
+			
+			if(multi)
+				msumadd*=parseFloat(multi[1]);
+				
+			else if(tag == "bug" || tag == "feature")
+				;
+				
+			else {
+				console.warn("wtf tag: "+tag[1]);
+				errors=true;
+			}
+		}
+		
+		msum+=msumadd;
+
+		console.log(formatTime(minutes)+" -> "+log);
+
+		var hours=Math.abs(100*minutes/60)*0.01;
+	};
+	
+	data.split("\n")
+		.map(function(l) { return l.trim(); })
+		.filter(function(l) { return !(l == "" || l[0] == "#"); })
+		.map(function(l) {
+			var e;
+			if((e=entryRegex.exec(l))) {
+				// new Date(year, month, day, hours, minutes, seconds, milliseconds)
+				var start=new Date(e[1], e[2], e[3], e[4], e[5], 0, 0);
+				var end=new Date(e[1], e[2], e[3], e[6], e[7], 0, 0);
+				if(start > end)	// midnight occurred
+					end.setDate(end.getDate()+1);
+				var minutes=(end-start)/(1000*60);
+					
+				var log=e[8];
+				
+				return { log:log, t:minutes, all:l };
+			}
+			else if((e=entryHoursRegex.exec(l))) {
+				var minutes=parseFloat(e[1])*60+parseFloat(e[2]);
+				var log=e[3];
+				return { log:log, t:minutes, all:l };
+			}
+			else {
+				console.warn("?WTF??", l, l.no);
+				errors=true;
+				return null;
+			}
+		})
+		.filter(function(e) { return e != null; })
+		.forEach(processLog);
+		
+// 	if(fi == process.argv.length-1) {
+		console.log("-----");
+		console.log("suma: "+formatTime(msumreal));
+		console.log("po uwzględnieniu przeliczników: "+formatTime(msum));
+		if(errors)
+			console.log("nie wszystko zrozumiane, wtf?");
+//	}
+});
+
