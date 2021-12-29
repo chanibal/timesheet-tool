@@ -1,0 +1,27 @@
+# this is an example timesheet anonymized from a real project
+
+2014-12-05 17:00-18:00 proxy task #598
+2014-12-08 13:45-14:10 reading new issues
+2014-12-08 14:10-14:52 translations (#593)
+2014-12-08 14:52-15:16 translations (#592), fix #593
+2014-12-08 15:16-19:09 new params in (redacted) (#584)
+2014-12-08 19:09-20:06 http fail (#598)
+2014-12-08 22:15-23:10 http fail (#598)
+2014-12-09 15:18-16:52 http fail (#598)
+2014-12-09 16:52-17:20 timed messages #646
+2014-12-09 20:02-20:50 timed messages #646
+2014-12-09 20:50-21:07 [bug] [x0] #674 - scroll
+2014-12-10 11:50-12:20 [bug] [x0] #661 - undeterministic randomness
+2014-12-10 16:11-16:30 -||-
+2014-12-10 17:45-19:00 -||-
+2014-12-11 11:00-12:20 -||-
+2014-12-11 12:20-15:30 (redacted) #612
+2014-12-11 15:30-15:45 fix #593
+2014-12-11 16:20-17:57 builds, releases, raport #584
+2014-12-15 14:20-14:45 #751 external party caused issue [x2]
+2014-12-15 16:00-16:32 -||-
+2014-12-17 14:35-16:53 #752 upgrade issues
+2014-12-19 10:50-11:10 #754 tracking problems
+2014-12-19 11:30-11:50 #754 tracking problems
+2014-12-22 13:15-14:30 #612 consulting
+2014-12-23 17:00-17:08 #756 api issue

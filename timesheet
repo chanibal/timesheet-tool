@@ -2,13 +2,15 @@
 
 "use strict"
 
-console.log("Timesheet:" + process.argv[fi]);
+// console.log("Timesheet:" + process.argv[fi]);
 
 function formatTime(m) {
 	var h=~~(m/60);
 	m-=h*60;
 	return h+"h"+("00"+m).slice(-2)+"m";
 }
+
+var showRealTime = false;
 
 
 var msum=0;
@@ -24,15 +26,23 @@ require("fs").readFile(process.argv[fi], "utf-8", function(error, data) {
 	var entryHoursRegex=/^(\d+)\s*h(\d+)m\s+(.+)$/;
 	var tagRegex=/\[([^\]]+)\]/g;
 		
+	var previousLog;
 	
+	var entries = {};
+
 	function processLog(entry) {
 	
 		var log = entry.log;
+		if (log == "..." || log == "-||-") {
+			if (!previousLog)
+				throw "Cannot continue previous message if there was none";
+			log = previousLog;
+		}
+		previousLog = log;
+
 		var minutes = entry.t;
 	
-		var msumadd=minutes;
-		msumreal+=msumadd;			
-
+		var multipiler = 1;
 	
 		var tag;
 		while((tag=tagRegex.exec(log))) {
@@ -40,22 +50,32 @@ require("fs").readFile(process.argv[fi], "utf-8", function(error, data) {
 			var multi=/^x\s*(\d+)$/.exec(tag);
 			
 			if(multi)
-				msumadd*=parseFloat(multi[1]);
+				multipiler = parseFloat(multi[1]);
 				
 			else if(tag == "bug" || tag == "feature")
 				;
 				
 			else {
-				console.warn("wtf tag: "+tag[1]);
+				console.warn("?? tag: "+tag[1]);
 				errors=true;
 			}
 		}
 		
-		msum+=msumadd;
+		msumreal += minutes;	
+		msum += minutes * multipiler;
 
-		console.log(formatTime(minutes)+" -> "+log);
-
-		var hours=Math.abs(100*minutes/60)*0.01;
+		// console.log(formatTime(minutes)+"\t"+log);
+		if (entries[log]) {
+			entries[log].rawtime += minutes;
+			entries[log].time += minutes * multipiler;
+		}
+		else {
+			entries[log] = {
+				rawtime: minutes,
+				time: minutes * multipiler
+			};
+		}
+		// var hours=Math.abs(100*minutes/60)*0.01;
 	};
 	
 	data.split("\n")
@@ -81,7 +101,7 @@ require("fs").readFile(process.argv[fi], "utf-8", function(error, data) {
 				return { log:log, t:minutes, all:l };
 			}
 			else {
-				console.warn("?WTF??", l, l.no);
+				console.warn("?? ", l, l.no);
 				errors=true;
 				return null;
 			}
@@ -90,11 +110,24 @@ require("fs").readFile(process.argv[fi], "utf-8", function(error, data) {
 		.forEach(processLog);
 		
 // 	if(fi == process.argv.length-1) {
+		for(var log in entries) {
+			if (!entries.hasOwnProperty(log)) continue;
+			var time = entries[log];
+			if(showRealTime)
+				console.log(formatTime(time.time)+"\t("+formatTime(time.rawtime)+")\t"+log);
+			else
+				console.log(formatTime(time.time)+"\t"+log);
+		}
+
 		console.log("-----");
-		console.log("suma: "+formatTime(msumreal));
-		console.log("po uwzględnieniu przeliczników: "+formatTime(msum));
+
+		if(showRealTime)
+			console.log(formatTime(msum), "\t(" + formatTime(msumreal) +")\ttotal billable (total real)");
+		else
+		console.log(formatTime(msum), "\ttotal");
+
 		if(errors)
-			console.log("nie wszystko zrozumiane, wtf?");
+			console.warn("WARNING: Some parts of timesheet were not undestood!");
 //	}
 });
 
